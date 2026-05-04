@@ -1,0 +1,82 @@
+name: Deploy Databricks Notebooks
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'project/notebooks/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-notebooks:
+    name: Deploy Notebooks to Databricks
+    runs-on: ubuntu-latest
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      DATABRICKS_WORKSPACE_PATH: ${{ secrets.DATABRICKS_WORKSPACE_PATH }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Databricks CLI
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install databricks-cli==0.17.6
+
+      - name: Verify Databricks configuration
+        run: |
+          echo "Using Databricks host: $DATABRICKS_HOST"
+          databricks --version
+          if [ -z "$DATABRICKS_WORKSPACE_PATH" ]; then
+            echo 'DATABRICKS_WORKSPACE_PATH must be set as a secret.'
+            exit 1
+          fi
+
+      - name: Deploy notebook files to Databricks
+        run: |
+          NOTEBOOK_ROOT="project/notebooks"
+          TARGET_ROOT="$DATABRICKS_WORKSPACE_PATH"
+
+          find "$NOTEBOOK_ROOT" -type f | while read -r file; do
+            ext="${file##*.}"
+            remote_file="$TARGET_ROOT/${file#$NOTEBOOK_ROOT/}"
+            remote_dir="$(dirname "$remote_file")"
+            databricks workspace mkdirs "$remote_dir"
+
+            case "$ext" in
+              ipynb)
+                fmt=JUPYTER
+                lang=PYTHON
+                ;;
+              py)
+                fmt=SOURCE
+                lang=PYTHON
+                ;;
+              sql)
+                fmt=SQL
+                lang=SQL
+                ;;
+              r)
+                fmt=R
+                lang=SCALA
+                ;;
+              *)
+                echo "Skipping unsupported file type: $file"
+                continue
+                ;;
+            esac
+
+            echo "Importing $file -> $remote_file"
+            databricks workspace import --format "$fmt" --language "$lang" --overwrite "$file" "$remote_file"
+          done
+
+      - name: Confirm deployed workspace path
+        run: |
+          databricks workspace ls "$DATABRICKS_WORKSPACE_PATH"

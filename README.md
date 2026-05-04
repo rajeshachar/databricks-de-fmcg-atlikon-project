@@ -1,10 +1,10 @@
 📘 Databricks Data Engineering Project
 
-End-to-End Data Pipeline using Databricks, AWS S3 & PySpark, BI Dashboard
+End-to-End Data Pipeline using Databricks, AWS S3 & PySpark
 
 📖 Overview
 
-This project demonstrates building a scalable data pipeline using Databricks. It ingests raw data into AWS S3, processes it using PySpark, and stores transformed data in a structured format for analytics.
+This repository contains a Databricks notebook-based data engineering project for FMCG analytics. The notebooks are organized by setup, dimension processing, and fact processing.
 
 🏗️ Architecture
 
@@ -17,61 +17,58 @@ Refined Layer: Cleaned and transformed data
 Outbound Layer: Business-ready data for reporting
 
 ⚙️ Tech Stack
-Databricks
-Apache Spark / PySpark
-AWS S3
-Delta Lake
-SQL
-AWS Glue (optional for cataloging)
+
+- Databricks
+- Apache Spark / PySpark
+- AWS S3
+- Delta Lake
+- SQL
 
 📂 Project Structure
 project/
-│
+├── dashboarding/
+│ └── denormalise_table_query_fmcg.txt
 ├── notebooks/
-│   ├── ingestion.py
-│   ├── transformation.py
-│   ├── load.py
-│
-├── configs/
-│   └── config.json
-│
-├── data/
-│   ├── sample_data.csv
-│
-├── scripts/
-│   └── utils.py
-│
-└── README.md
+│ ├── 1_setup/
+│ │ ├── dim_date_table_creation.ipynb
+│ │ ├── setup_catalog.ipynb
+│ │ └── utilities.ipynb
+│ ├── 2_dimension_data_processing/
+│ │ ├── 1_customers_data_processing.ipynb
+│ │ ├── 2_products_data_processing.ipynb
+│ │ └── 3_pricing_data_processing.ipynb
+│ └── 3_fact_data_processing/
+│ ├── 1_full_load_fact.ipynb
+│ └── 2_incremental_load_fact.ipynb
+└── resource/
+└── databricks_project.excalidraw
 
-🔄 Data Pipeline Steps
-Data Ingestion
-Read data from S3 landing bucket
-Format: CSV/JSON/Parquet
-Data Processing
-Handle null values
-Apply transformations using PySpark
-Perform joins, aggregations
-Data Storage
-Store processed data in Delta format
-Partition data for optimization
-Data Serving
-Expose data for analytics via SQL queries
+🔄 Notebook Deployment
+The GitHub Actions workflow deploys notebook changes in `project/notebooks/` to your Databricks workspace when changes are pushed to `main`.
 
-🧠 Key Features
-Incremental data processing
-Schema enforcement
-Data quality checks
-Partitioning & optimization
-Error handling and logging
+Required repository secrets:
 
-🚀 How to Run
-Upload notebooks to Databricks
-Configure cluster
-Update S3 paths in config
-Run notebooks in order:
-ingestion → transformation → load
+- `DATABRICKS_HOST` — Your Databricks workspace URL, e.g. `https://adb-123456789012345.10.azuredatabricks.net`
+- `DATABRICKS_TOKEN` — A Databricks personal access token with workspace import permissions
+- `DATABRICKS_WORKSPACE_PATH` — Destination path in Databricks, e.g. `/Users/<your-user>/databricks-de-fmcg-atlikon-project`
 
+📁 Workflow file:
+`.github/workflows/deploy-notebooks-to-databricks.yml`
+
+🚀 How it works
+
+1. `actions/checkout` checks out the repo.
+2. Python and `databricks-cli` are installed.
+3. All files under `project/notebooks/` are imported into the target Databricks workspace path.
+4. Existing notebooks are overwritten.
+
+🛠️ Usage
+
+- Add the required GitHub secrets in your repository settings.
+- Push notebook changes to the `main` branch.
+- The workflow runs automatically and uploads the updated notebooks.
 
 📌 Notes
 
-This project is designed for learning and demonstrating real-world data engineering practices using Databricks.
+- This workflow is optimized for Databricks notebook deployment and current `.ipynb` files.
+- If your workspace path or notebook format changes, update `DATABRICKS_WORKSPACE_PATH` or the workflow accordingly.
